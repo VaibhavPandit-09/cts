@@ -3,8 +3,10 @@ package com.csmt.io;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
 public class CsvReader {
@@ -17,6 +19,13 @@ public class CsvReader {
                 .build()
                 .parse(filereader);
         return records;
+    }
+
+    public static CSVParser readCsvParse(String path) throws IOException {
+        Reader fileReader = new FileReader(path);
+        return CSVFormat.EXCEL
+                .withFirstRecordAsHeader()
+                .parse(fileReader);
     }
 
     public static String getCsvName(String path) throws IOException {

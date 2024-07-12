@@ -23,8 +23,8 @@ public class App
 {
     public static void main( String[] args ) throws IOException, SQLException
     {
-        // String path = "csv/match_data.csv";
-        String path = "csv/Books_rating.csv";
+        String path = "csv/match_data.csv";
+        //String path = "csv/Books_rating.csv";
         String name = CsvReader.getCsvName(path);
 
         Iterable<CSVRecord> records = CsvReader.readCsv(path);
@@ -66,7 +66,7 @@ public class App
 
         //Calculate time to execute for the following 2 calls in minutes seconds and miliseconds
         long startTime = System.currentTimeMillis();
-        csvUtility.updateTable(CsvReader.readCsv(path), name, connection);
+        csvUtility.updateTable(path, name, connection);
         long endTime = System.currentTimeMillis();
         long executionTime = endTime - startTime;
         long minutes = executionTime / 60000;

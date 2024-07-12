@@ -1,5 +1,6 @@
 package com.csmt.utilities;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
@@ -10,5 +11,5 @@ public interface CsvUtility {
 
     public Map<String, String> getHeaderMap(Iterable<CSVRecord> records);
 
-    public void updateTable(Iterable<CSVRecord> records, String tableName, Connection connection) throws SQLException;
+    public void updateTable(String filePath, String tableName, Connection connection) throws SQLException, IOException;
 }
