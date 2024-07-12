@@ -23,8 +23,8 @@ public class App
 {
     public static void main( String[] args ) throws IOException, SQLException
     {
-        String path = "csv/match_data.csv";
-        //String path = "csv/Books_rating.csv";
+        // String path = "csv/match_data.csv";
+        String path = "csv/Books_rating.csv";
         String name = CsvReader.getCsvName(path);
 
         Iterable<CSVRecord> records = CsvReader.readCsv(path);

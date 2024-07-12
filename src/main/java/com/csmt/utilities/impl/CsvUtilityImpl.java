@@ -76,7 +76,6 @@ public class CsvUtilityImpl implements CsvUtility {
         return insertSQL.toString();
     }
 
-
     @Override
     public void updateTable(String filePath, String tableName, Connection connection) throws SQLException, IOException {
         try (CSVParser parser = CsvReader.readCsvParse(filePath)) {
@@ -90,44 +89,48 @@ public class CsvUtilityImpl implements CsvUtility {
 
             int count = 0;
             List<CSVRecord> batch = new ArrayList<>();
-            for (CSVRecord record : parser) {
-                
-                if (count != 0) {
-                    batch.add(record);
+            connection.setAutoCommit(false);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(
+                    buildInsertSQL(tableName, new ArrayList<>(headerMap.keySet()), BATCH_SIZE))) {
+
+                for (CSVRecord record : parser) {
+                    if (count != 0) {
+                        batch.add(record);
+                    }
+                    if (batch.size() >= BATCH_SIZE) {
+                        insertBatch(batch, headerMap, preparedStatement);
+                        batch.clear();
+                    }
+                    count++;
                 }
-                if (batch.size() >= BATCH_SIZE) {
-                    insertBatch(batch, headerMap, tableName, connection);
-                    batch.clear();
+                if (!batch.isEmpty()) {
+                    insertBatch(batch, headerMap, preparedStatement);
                 }
-                count++;
-            }
-            if (!batch.isEmpty()) {
-                insertBatch(batch, headerMap, tableName, connection);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
         }
     }
 
-    private void insertBatch(List<CSVRecord> batch, Map<String, String> headerMap, String tableName,
-            Connection connection) throws SQLException {
+    private void insertBatch(List<CSVRecord> batch, Map<String, String> headerMap, PreparedStatement preparedStatement)
+            throws SQLException {
         List<String> sanitizedHeaders = new ArrayList<>(headerMap.keySet());
-        String insertSQL = buildInsertSQL(tableName, sanitizedHeaders, batch.size());
-        //System.out.println("Executing SQL: " + insertSQL); // Debugging output
-        try (PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
-            int paramIndex = 1;
-            for (CSVRecord record : batch) {
-                for (String sanitizedHeader : sanitizedHeaders) {
-                    String originalHeader = headerMap.get(sanitizedHeader);
-                    String value = record.get(originalHeader).replace("'", "''").replace("/", "//"); // Properly escape
-                                                                                                     // values
-                    preparedStatement.setString(paramIndex++, value);
-                }
+        int paramIndex = 1;
+        for (CSVRecord record : batch) {
+            for (String sanitizedHeader : sanitizedHeaders) {
+                String originalHeader = headerMap.get(sanitizedHeader);
+                String value = record.get(originalHeader).replace("'", "''").replace("/", "//"); // Properly escape
+                                                                                                 // values
+                preparedStatement.setString(paramIndex++, value);
             }
-            preparedStatement.addBatch();
-            preparedStatement.executeBatch();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.err.println("Failed SQL: " + insertSQL); // Debugging output
         }
+        preparedStatement.addBatch();
+        preparedStatement.executeBatch();
+        preparedStatement.clearParameters();
     }
 
 
